@@ -346,7 +346,7 @@ Mover.PathBuilder <- {
 		return path;
 	}
 }
-Mover.SwordMount <- class extends Mover.Projectile{
+Mover.Glider <- class extends Mover.Projectile{
 		owner = null; //player handle
 		maxSpeed = 1000; //number
 		drag = 0.999;
