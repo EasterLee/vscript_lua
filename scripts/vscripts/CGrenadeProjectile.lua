@@ -11,15 +11,14 @@ end
 
 
 CGrenadeProjectile = {
-	flSpeed = 0
+	flSpeed = 0,
 	vecDir = Vector(0,0,0),
 	flGravity = 0,
 	flFriction = 0,
 	SetSpeed = function(self, flSpeed)
 		self.speed = flSpeed
 		self:SetVelocity(flSpeed * vecDir)
-	end,
-end
+	end
 }
 --Allowing holders of this metatable to use function from CGrenadeProjectile and its parent
 CGrenadeProjectile.mt = {
