@@ -1,9 +1,9 @@
-Convars:RegisterConvar("STEAM_ID_HANDLER_NETWORK_ID", "", "", FCVAR_RELEASE)
-Convars:RegisterConvar("STEAM_ID_HANDLER_XUID", "", "", FCVAR_RELEASE)
-Convars:RegisterConvar("STEAM_ID_HANDLER_USER_ID", "", "", FCVAR_RELEASE)
-Convars:RegisterConvar("STEAM_ID_HANDLER_NAME", "", "", FCVAR_RELEASE)
+Convars:RegisterConvar("STEAM_ID_HANDLER_NETWORK_ID", "", "", FCVAR_PROTECTED)
+Convars:RegisterConvar("STEAM_ID_HANDLER_XUID", "", "", FCVAR_PROTECTED)
+Convars:RegisterConvar("STEAM_ID_HANDLER_USER_ID", "", "", FCVAR_PROTECTED)
+Convars:RegisterConvar("STEAM_ID_HANDLER_NAME", "", "", FCVAR_PROTECTED)
 
-Convars:RegisterConvar("STEAM_ID_HANDLER_USER_ID_WHITELIST", "", "", FCVAR_RELEASE)
+Convars:RegisterConvar("STEAM_ID_HANDLER_USER_ID_WHITELIST", "", "", FCVAR_PROTECTED)
 
 SteamIdHandler = {
 	n = 1,
@@ -52,10 +52,10 @@ function SteamIdHandler.RemoveUserInfo(tInfo)
 		return
 	end
 	
-	local networkids = split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
-	local xuids = split(Convars:GetStr("STEAM_ID_HANDLER_XUID"), SteamIdHandler.separator)
-	local uids = split(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), SteamIdHandler.separator)
-	local names = split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
+	local networkids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
+	local xuids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_XUID"), SteamIdHandler.separator)
+	local uids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), SteamIdHandler.separator)
+	local names = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
 	
 	local idx = SteamIdHandler.UserId[tInfo.userid]
 	
@@ -71,7 +71,7 @@ function SteamIdHandler.RemoveUserInfo(tInfo)
 	names[idx] = names[SteamIdHandler.n]
 	table.remove(names)
 	
-	for k, v in pairs(SteamIdHandler.UserId)
+	for k, v in pairs(SteamIdHandler.UserId) do
 		-- find the key with the last index
 		if v == SteamIdHandler.n then
 			SteamIdHandler.UserId[k] = idx
@@ -83,10 +83,10 @@ function SteamIdHandler.RemoveUserInfo(tInfo)
 	SteamIdHandler.UserId[tInfo.userid] = nil
 	
 	-- update convars
-	Convars:SetConvar("STEAM_ID_HANDLER_NETWORK_ID", tableToString(networkids))
-	Convars:SetConvar("STEAM_ID_HANDLER_XUID", tableToString(xuids))
-	Convars:SetConvar("STEAM_ID_HANDLER_USER_ID", tableToString(uids))
-	Convars:SetConvar("STEAM_ID_HANDLER_NAME", tableToString(names))
+	Convars:SetStr("STEAM_ID_HANDLER_NETWORK_ID", SteamIdHandler.tableToString(networkids))
+	Convars:SetStr("STEAM_ID_HANDLER_XUID", SteamIdHandler.tableToString(xuids))
+	Convars:SetStr("STEAM_ID_HANDLER_USER_ID", SteamIdHandler.tableToString(uids))
+	Convars:SetStr("STEAM_ID_HANDLER_NAME", SteamIdHandler.tableToString(names))
 	
 	-- decrease size
 	SteamIdHandler.n = SteamIdHandler.n - 1
@@ -94,15 +94,17 @@ end
 
 function SteamIdHandler.AddUserInfo(tInfo)
 	if SteamIdHandler.HasUser(tInfo.userid) then
+		print("Already has info for: "..tInfo.name)
 		return
 	end
-	-- (#SteamIdHandler.UserId ~= 0) : "\0" ? ""
-	local sep = (#SteamIdHandler.n ~= 0) and "\24" or ""
+
+	-- (SteamIdHandler.n ~= 0) : "\0" ? ""
+	local sep = (SteamIdHandler.n ~= 1) and SteamIdHandler.separator or ""
 	local str = Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID")
 	Convars:SetStr("STEAM_ID_HANDLER_NETWORK_ID", str .. sep .. tInfo.networkid)
 	
 	str = Convars:GetStr("STEAM_ID_HANDLER_XUID")
-	Convars:SetStr("STEAM_ID_HANDLER_XUID", str .. sep .. tInfo.xuid)
+	Convars:SetStr("STEAM_ID_HANDLER_XUID", str .. sep .. tostring(tInfo.xuid))
 	
 	str = Convars:GetStr("STEAM_ID_HANDLER_USER_ID")
 	Convars:SetStr("STEAM_ID_HANDLER_USER_ID", str .. sep .. tInfo.userid)
@@ -112,6 +114,9 @@ function SteamIdHandler.AddUserInfo(tInfo)
 	
 	SteamIdHandler.UserId[tInfo.userid] = SteamIdHandler.n
 	SteamIdHandler.n = SteamIdHandler.n + 1
+
+	print("Player Info Added")
+	__DumpScope(0, tInfo)
 end
 
 function SteamIdHandler.UpdateUserName(tInfo)
@@ -121,7 +126,7 @@ function SteamIdHandler.UpdateUserName(tInfo)
 		return
 	end
 	
-	local names = split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
+	local names = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
 	
 	local idx = SteamIdHandler.UserId[tInfo.userid]
 	
@@ -129,27 +134,27 @@ function SteamIdHandler.UpdateUserName(tInfo)
 	names[idx] = tInfo.name
 	
 	-- update convar
-	Convars:SetConvar("STEAM_ID_HANDLER_NAME", tableToString(names))
+	Convars:SetStr("STEAM_ID_HANDLER_NAME", SteamIdHandler.tableToString(names))
 end
 
 function SteamIdHandler.AddUserToWhitelist(tInfo)
 	local str = Convars:GetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST")
-	local sep = (#str ~= 0) and "\24" or ""
+	local sep = (#str ~= 0) and SteamIdHandler.separator or ""
 	Convars:SetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST", str .. sep .. tInfo.userid)
 end
 
 function SteamIdHandler.HasUser(uid)
-	return SteamIdHandler[uid] ~= nil
+	return SteamIdHandler.UserId[uid] ~= nil
 end
 
 function SteamIdHandler.FireEvents()
 
 	-- prepare event data tables
 	local event_datas = {}
-	local networkids = split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
-	local xuids = split(Convars:GetStr("STEAM_ID_HANDLER_XUID"), SteamIdHandler.separator)
-	local uids = split(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), SteamIdHandler.separator)
-	local names = split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
+	local networkids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
+	local xuids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_XUID"), SteamIdHandler.separator)
+	local uids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), SteamIdHandler.separator)
+	local names = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
 	for idx, v in ipairs(networkids) do
 		table.insert(event_datas, {
 			networkid = networkids[idx],
@@ -166,35 +171,71 @@ function SteamIdHandler.FireEvents()
 
 end
 
+function SteamIdHandler.DumpInfo()
+	-- prepare event data tables
+	local event_datas = {}
+	local networkids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
+	local xuids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_XUID"), SteamIdHandler.separator)
+	local uids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), SteamIdHandler.separator)
+	local names = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NAME"), SteamIdHandler.separator)
+	for idx, v in ipairs(networkids) do
+		table.insert(event_datas, {
+			networkid = networkids[idx],
+			xuid = tonumber(xuids[idx]),
+			userid = tonumber(uids[idx]),
+			name = names[idx]
+		})
+	end
+
+	-- print
+	__DumpScope(0, event_datas)
+end
+
+function SteamIdHandler.Reset()
+	Convars:SetStr("STEAM_ID_HANDLER_NETWORK_ID", "")
+	Convars:SetStr("STEAM_ID_HANDLER_XUID", "")
+	Convars:SetStr("STEAM_ID_HANDLER_USER_ID", "")
+	Convars:SetStr("STEAM_ID_HANDLER_NAME", "")
+	Convars:SetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST", "")
+	SteamIdHandler.n = 0
+	SteamIdHandler.UserId = {}
+end
+
 -- for SteamIdHandler.HasUser and RemoveUserInfo
-for field,s in string.gmatch(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), "([^"..SteamIdHandler.separator.."]*)("..SteamIdHandler.separator.."?)") do
-	SteamIdHandler.UserId[field] = SteamIdHandler.n
-	SteamIdHandler.n = SteamIdHandler.n + 1
-	if s == "" then
-		break
+if #Convars:GetStr("STEAM_ID_HANDLER_USER_ID") ~= 0 then
+	for field,s in string.gmatch(Convars:GetStr("STEAM_ID_HANDLER_USER_ID"), "([^"..SteamIdHandler.separator.."]*)("..SteamIdHandler.separator.."?)") do
+		print(field)
+		SteamIdHandler.UserId[tonumber(field)] = SteamIdHandler.n
+		SteamIdHandler.n = SteamIdHandler.n + 1
+		if s == "" then
+			break
+		end
 	end
 end
 
--- get whitelist
-local whitelist = {}
-for field,s in string.gmatch(Convars:GetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST"), "([^"..SteamIdHandler.separator.."]*)("..SteamIdHandler.separator.."?)") do
-	whitelist[field] = true
-	if s == "" then
-		break
-	end
-end
 
--- remove player who didn't load in on last map -> somehow got disconnected without triggering player_disconnect
-for k, v in pairs(SteamIdHandler.UserId) do
-	if whitelist[k] == nil then
-		SteamIdHandler.RemoveUserInfo({userid = k})
+if #Convars:GetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST") ~= 0 then
+	-- get whitelist
+	local whitelist = {}
+	for field,s in string.gmatch(Convars:GetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST"), "([^"..SteamIdHandler.separator.."]*)("..SteamIdHandler.separator.."?)") do
+		whitelist[tonumber(field)] = true
+		if s == "" then
+			break
+		end
+	end
+
+	-- remove player who didn't load in on last map -> somehow got disconnected without triggering player_disconnect
+	for k, v in pairs(SteamIdHandler.UserId) do
+		if whitelist[k] == nil then
+			SteamIdHandler.RemoveUserInfo({userid = k})
+		end
 	end
 end
 
 -- reset whitelist
 Convars:SetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST", "");
 
-ListenToGameEvent("player_connect", SteamIdHandler.AddUserInfo)
-ListenToGameEvent("player_disconnect", SteamIdHandler.RemoveUserInfo)
-ListenToGameEvent("player_info", SteamIdHandler.UpdateUserName)
-ListenToGameEvent("player_activate", SteamIdHandler.AddUserToWhitelist)
+ListenToGameEvent("player_connect", SteamIdHandler.AddUserInfo, nil)
+ListenToGameEvent("player_disconnect", SteamIdHandler.RemoveUserInfo, nil)
+ListenToGameEvent("player_info", SteamIdHandler.UpdateUserName, nil)
+ListenToGameEvent("player_activate", SteamIdHandler.AddUserToWhitelist, nil)
