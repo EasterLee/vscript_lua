@@ -43,7 +43,7 @@ string				address		ip:port
 bool				bot	
 ]]--
 
-
+--tInfo{userid}
 function SteamIdHandler.RemoveUserInfo(tInfo)
 
 	-- user doesn't exist
@@ -92,6 +92,7 @@ function SteamIdHandler.RemoveUserInfo(tInfo)
 	SteamIdHandler.n = SteamIdHandler.n - 1
 end
 
+--tInfo{userid, networkid, xuid, name}
 function SteamIdHandler.AddUserInfo(tInfo)
 	if SteamIdHandler.HasUser(tInfo.userid) then
 		print("Already has info for: "..tInfo.name)
@@ -119,6 +120,7 @@ function SteamIdHandler.AddUserInfo(tInfo)
 	__DumpScope(0, tInfo)
 end
 
+--tInfo{userid, name}
 function SteamIdHandler.UpdateUserName(tInfo)
 	-- user doesn't exist
 	if not SteamIdHandler.HasUser(tInfo.userid) then
@@ -137,6 +139,7 @@ function SteamIdHandler.UpdateUserName(tInfo)
 	Convars:SetStr("STEAM_ID_HANDLER_NAME", SteamIdHandler.tableToString(names))
 end
 
+--tInfo{userid}
 function SteamIdHandler.AddUserToWhitelist(tInfo)
 	local str = Convars:GetStr("STEAM_ID_HANDLER_USER_ID_WHITELIST")
 	local sep = (#str ~= 0) and SteamIdHandler.separator or ""
@@ -148,7 +151,6 @@ function SteamIdHandler.HasUser(uid)
 end
 
 function SteamIdHandler.FireEvents()
-
 	-- prepare event data tables
 	local event_datas = {}
 	local networkids = SteamIdHandler.split(Convars:GetStr("STEAM_ID_HANDLER_NETWORK_ID"), SteamIdHandler.separator)
