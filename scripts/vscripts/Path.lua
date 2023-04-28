@@ -1,42 +1,9 @@
-Mover = {};
 function VectorLengthSqr(vec)
 	return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z
 end
 function VectorClone(vec)
 	return Vector(vec.x, vec.y, vec.z)
 end
-Mover.Projectile = {
-	constructor = function(vecOrigin, iMoveType, iCollisiongroup)
-		local hEnt = SpawnEntityFromTableSynchronous("hegrenade_projectile", {
-			origin = vecOrigin,
-			movetype = iMoveType,
-			collisiongroup = iCollisiongroup,
-		})
-		return hEnt
-	end,
-	SetDir = function(self, vecDir)
-		local flLength = VectorLengthSqr(vecDir);
-		-- Normalize vector if length is not close to 1
-		if flLength <= 0.95 or flLength >= 1.05 then
-			vecDir = vecDir:Normalized()
-		end
-		flLength = self:GetVelocity():Length()
-		self:SetVelocity(vecDir * flLength);
-	end,
-	SetSpeed = function(self, flSpeed)
-		self:SetVelocity(self:GetVelocity():Normalized() * flSpeed);
-	end,
-	AddSpeed = function(self, flSpeed)
-		self:ApplyAbsVelocityImpulse(self:GetVelocity():Normalized() * flSpeed)
-	end,
-	GoTo = function(self, vecPos)
-		local vecDisplacement = vecPos - self:GetOrigin();
-		self:SetVelocity(vecDisplacement:Normalized() * self:GetVelocity():Length())
-	end,
-	GetFuturePos = function(self, flTime)
-		return self:GetOrigin() + self:GetVelocity() * flTime;
-	end
-}
 BezierCurveCubic = class(
 	{
 		constructor = function(self, vecStart, vecCtrl1, vecCtrl2, vecEnd)

@@ -1,40 +1,43 @@
---Util function
-function cloneFilterFunction(tbl)
-	local tClone = {}
-	for k, v in pairs(tbl) do
-		if type(v) ~= 'Function' then
-			tClone[k] = v
-		end
-	end
-	return tClone
-end
-
-
 CGrenadeProjectile = {
-	flSpeed = 0,
-	vecDir = Vector(0,0,0),
-	flGravity = 0,
-	flFriction = 0,
+	SetDir = function(self, vecDir)
+		local flLength = vecDir.x * vecDir.x + vecDir.y * vecDir.y + vecDir.z * vecDir.z;
+		-- Normalize vector if length is not close to 1
+		if flLength <= 0.95 or flLength >= 1.05 then
+			vecDir = vecDir:Normalized()
+		end
+		flLength = self:GetVelocity():Length()
+		self:SetVelocity(vecDir * flLength);
+	end,
 	SetSpeed = function(self, flSpeed)
-		self.speed = flSpeed
-		self:SetVelocity(flSpeed * vecDir)
+		self:SetVelocity(self:GetVelocity():Normalized() * flSpeed);
+	end,
+	AddSpeed = function(self, flSpeed)
+		self:ApplyAbsVelocityImpulse(self:GetVelocity():Normalized() * flSpeed)
+	end,
+	GoTo = function(self, vecPos)
+		local vecDisplacement = vecPos - self:GetOrigin();
+		self:SetVelocity(vecDisplacement:Normalized() * self:GetVelocity():Length())
+	end,
+	GetFuturePos = function(self, flTime)
+		return self:GetOrigin() + self:GetVelocity() * flTime;
 	end
 }
 --Allowing holders of this metatable to use function from CGrenadeProjectile and its parent
-CGrenadeProjectile.mt = {
+local instanceMT = {
 	__index = CGrenadeProjectile,
 }
 --Allowing CGrenadeProjectile to inherit functions from CBaseEntity
-local constructor = function(self, iMovetype, iCollisionGroup)
+local constructor = function(vecOrigin, iMoveType, iCollisiongroup)
 	local hProjectile = SpawnEntityFromTableSynchronous("hegrenade_projectile", {
-		movetype = iMovetype,
-		collisiongroup = iCollisionGroup
+		origin = vecOrigin,
+		movetype = iMoveType,
+		collisiongroup = iCollisiongroup,
 	})
-	setmetatable(hProjectile, self.mt)
+	setmetatable(hProjectile, instanceMT)
 	return hProjectile
 end
-local mt = {
+local classMT = {
 	__index = CBaseEntity,
 	__call = constructor,
 }
-setmetatable(CGrenadeProjectile, mt);
+setmetatable(CGrenadeProjectile, classMT);
